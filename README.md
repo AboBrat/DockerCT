@@ -23,9 +23,10 @@ sudo systemctl enable docker
 ```
 docker --version
 ```
-### 4 .Add user to the docker:
+### 4 .Create group and add user to the docker:
 
 ```
+sudo groupadd docker
 sudo usermod -aG docker $USER
 ```
 
@@ -45,7 +46,15 @@ docker login -u <dockerhubusername>
 ```
 
 ### 7. Tag and build image to:
+
+Build amd64 architectur:
 ```
 docker tag toolbox:1 <username>/<repository_name>:<tag>
 docker push <username>/<repository_name>:<tag>
+```
+Build, push Dokcer image and create new repo on DockerHub with two architectures(amdx64 and armx64) in one tag:
+
+```
+docker buildx create --use
+docker buildx build --platform linux/amd64,linux/arm64  -t username/imagename:tag   --push .
 ```
