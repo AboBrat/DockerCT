@@ -1,4 +1,20 @@
-FROM ubuntu:latest
+FROM alpine
+ARG ARCH
+RUN ARCH = ${uname -m}\
+if[ "$ARCH" == "x86_64" ];\
+    TF_ARCH = "linux_amd64"\
+    KUBECTL = "amd64"\
+    IMAGE = " "\
+elif[ "$ARCH" == "aarch64" ]; \
+    TF_ARCH = "linux_arm64" \
+    KUBECTL = "arm64"\
+    IMAGE = "arm64v8/"\
+else echo "Unknown architecture"\
+    exit 1 \
+fi
+
+
+FROM ${IMAGE}ubuntu
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -8,56 +24,36 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Create a non-root user
 RUN useradd -m -s /bin/bash $USER
-
+RUN echo ${IMAGE} ${ARCH} ${KUBECTL} ${TF_ARCH}
 # Install tools
 RUN apt-get update && \
     apt-get install -y \
-    mc \
+    vim \
+    curl \
+    nano \
+    apt-transport-https \
+    software-properties-common \
     git \
     vim \
     curl \
-    wget \
-    htop \
-    tmux \
-    nano \
-    awscli \
-    neofetch \
-    docker.io \
-    ca-certificates \
-    apt-transport-https \
-    software-properties-common \
-    libssl-dev libffi-dev \
-    mc \
-    git \
-    vim \
-    curl \
-    wget \
-    htop \
-    tmux \
-    nano \
-    awscli \
-    neofetch \
-    docker.io \
-    ca-certificates \
-    apt-transport-https \
-    software-properties-common \
-    libssl-dev libffi-dev 
+    unzip \
+    wget
 
-# Install Terraform
-RUN curl -LO https://releases.hashicorp.com/terraform/0.15.4/terraform_0.15.4_linux_amd64.zip \
-    && unzip terraform_0.15.4_linux_amd64.zip \
-    && mv terraform $HOME/bin \
-    && rm terraform_0.15.4_linux_amd64.zip
+#Install Terraform
+RUN curl -LO https://releases.hashicorp.com/terraform/1.5.2/terraform_1.5.2_'${TF_ARCH}'.zip && \
+    unzip terraform_1.5.2_'${TF_ARCH}'.zip -d /usr/local/bin/ && \
+    rm terraform_1.5.2_'${TF_ARCH}'.zip; 
 
-# Install kubectl
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
-    && chmod +x kubectl \
-    && mv kubectl $HOME/bin
+# Install Kube
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL}/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/ 
 
 # Install Ansible
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3 get-pip.py && \
-    pip install ansible
+RUN apt update && \
+    apt install -y ansible && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the non-root user
 USER $USER
