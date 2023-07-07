@@ -28,7 +28,6 @@ RUN if [ $(uname -m) == "x86_64" ]; then ARCH="amd64"; \
         #Install Kubernets for amd64                                          
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"; \
         install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
-        pip3 install ansible; \
     else [ $(uname -m) == "aarch64" ]; \
         #Install Terraform for arm64
         wget https://releases.hashicorp.com/terraform/${TERRAFORMVERSION}/terraform_${TERRAFORMVERSION}_linux_arm64.zip; \
@@ -37,9 +36,11 @@ RUN if [ $(uname -m) == "x86_64" ]; then ARCH="amd64"; \
         #Install Kubernetes for arm64
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"; \
         install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl; \
-        pip3 install ansible; \
     fi ; \
         echo "Unknow architecture"
+
+
+RUN pip3 install ansible
 
 # Create a non-root user
 RUN useradd -m -s /bin/bash ${USER}
