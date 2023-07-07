@@ -1,21 +1,29 @@
-FROM alpine
-ARG ARCH
-RUN ARCH = ${uname -m}\
-if[ "$ARCH" == "x86_64" ];\
-    TF_ARCH = "linux_amd64"\
-    KUBECTL = "amd64"\
-    IMAGE = " "\
-elif[ "$ARCH" == "aarch64" ]; \
-    TF_ARCH = "linux_arm64" \
-    KUBECTL = "arm64"\
-    IMAGE = "arm64v8/"\
-else echo "Unknown architecture"\
-    exit 1 \
-fi
+FROM ubuntu
+ARG TERRAFORMVERSION="1.5.2"
+ARG TARGETARCH
 
+RUN echo "TARGETARCH": ${TARGETARCH}
+RUN echo "$(uname -m)"
 
-FROM ${IMAGE}ubuntu
-
+RUN if [ $(uname -m) == "x86_64" ]; then TF_ARCH="linux_amd64" KUBECTL="amd64" \
+#Install Terraform for amd64
+        curl -LO https://releases.hashicorp.com/terraform/${TERRAFORMVERSION}/terraform_${TERRAFORMVERSION}_${TF_ARCH}.zip \
+        unzip terraform_${TERRAFORMVERSION}_'${TF_ARCH}'.zip -d /usr/local/bin/ \
+        rm terraform_${TERRAFORMVERSION}_'${TF_ARCH}'.zip; \
+#Install Kubernets for amd64                                          
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL}/kubectl" \
+        chmod +x kubectl \
+        mv kubectl /usr/local/bin/ ; \
+    else TF_ARCH="linux_arm64" KUBECTL="arm64" \
+#Install Terraform for arm64
+        curl -LO https://releases.hashicorp.com/terraform/${TERRAFORMVERSION}/terraform_${TERRAFORMVERSION}_${TF_ARCH}.zip \
+        unzip terraform_${TERRAFORMVERSION}_'${TF_ARCH}'.zip -d /usr/local/bin/ \
+        rm terraform_${TERRAFORMVERSION}_'${TF_ARCH}'.zip;  \
+#Install Kubernetes for arm64
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL}/kubectl" \
+        chmod +x kubectl \
+        mv kubectl /usr/local/bin/ ; \
+    fi ; echo "error"
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     USER=ndrobnjak \
@@ -23,8 +31,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/home/$USER/bin:$PATH
 
 # Create a non-root user
-RUN useradd -m -s /bin/bash $USER
-RUN echo ${IMAGE} ${ARCH} ${KUBECTL} ${TF_ARCH}
+RUN useradd -m -u 1000  ${USER} && \
+    echo "$USER ALL =(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 # Install tools
 RUN apt-get update && \
     apt-get install -y \
@@ -38,16 +47,6 @@ RUN apt-get update && \
     curl \
     unzip \
     wget
-
-#Install Terraform
-RUN curl -LO https://releases.hashicorp.com/terraform/1.5.2/terraform_1.5.2_'${TF_ARCH}'.zip && \
-    unzip terraform_1.5.2_'${TF_ARCH}'.zip -d /usr/local/bin/ && \
-    rm terraform_1.5.2_'${TF_ARCH}'.zip; 
-
-# Install Kube
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${KUBECTL}/kubectl" && \
-    chmod +x kubectl && \
-    mv kubectl /usr/local/bin/ 
 
 # Install Ansible
 RUN apt update && \
