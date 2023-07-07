@@ -58,3 +58,9 @@ Build, push Dokcer image and create new repo on DockerHub with two architectures
 docker buildx create --use
 docker buildx build --platform linux/amd64,linux/arm64  -t username/imagename:tag   --push .
 ```
+### 8.How to run image
+
+```
+docker pull <user>/<image>:tag
+docker run -it <user>/<image>:tag
+```
