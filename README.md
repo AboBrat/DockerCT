@@ -24,7 +24,7 @@ sudo systemctl enable docker
 docker --version
 ```
 ### 4 .Create group and add user to the docker:
-
+https://learn.microsoft.com/en-us/windows/wsl/wsl-config
 ```
 sudo groupadd docker
 sudo usermod -aG docker $USER
